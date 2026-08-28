@@ -14,7 +14,7 @@ on:
       - "**/*.tf"
       - "**/*.tfvars"
       - "**/*.tftest.hcl"
-      - ".terraform.lock.hcl"
+      - "**/.terraform.lock.hcl"
       - ".github/workflows/terraform.yml"
   workflow_dispatch:
 
