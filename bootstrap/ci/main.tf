@@ -42,12 +42,12 @@ data "aws_iam_policy_document" "assume_plan_role" {
     }
 
     condition {
-      test     = "StringLike"
-      variable = "token.actions.githubusercontent.com:sub"
-      values = [
-        "${local.repo_subject_prefix}:pull_request",
-        "${local.repo_subject_prefix}:ref:refs/heads/main",
-      ]
+        test     = "StringLike"
+        variable = "token.actions.githubusercontent.com:sub"
+        values = [
+            "${local.repo_subject_prefix}:pull_request*",
+            "${local.repo_subject_prefix}:ref:refs/heads/main",
+        ]
     }
   }
 }
