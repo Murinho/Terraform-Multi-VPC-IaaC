@@ -38,14 +38,14 @@ resource "terraform_data" "guardrails" {
 module "network" {
   source = "../../modules/network"
 
-  name_prefix                     = local.name_prefix
-  availability_zone               = local.selected_az
-  consumer_vpc_cidr               = var.consumer_vpc_cidr
-  service_vpc_cidr                = var.service_vpc_cidr
-  consumer_secondary_cidrs        = var.consumer_secondary_cidrs
-  connectivity_mode               = var.connectivity_mode
-  manage_imported_security_group  = var.manage_imported_security_group
-  tags                            = local.common_tags
+  name_prefix                    = local.name_prefix
+  availability_zone              = local.selected_az
+  consumer_vpc_cidr              = var.consumer_vpc_cidr
+  service_vpc_cidr               = var.service_vpc_cidr
+  consumer_secondary_cidrs       = var.consumer_secondary_cidrs
+  connectivity_mode              = var.connectivity_mode
+  manage_imported_security_group = var.manage_imported_security_group
+  tags                           = local.common_tags
 
   depends_on = [terraform_data.guardrails]
 }
@@ -67,15 +67,15 @@ module "application" {
   count  = var.connectivity_mode == "privatelink" && var.enable_compute ? 1 : 0
   source = "../../modules/application"
 
-  name_prefix        = local.name_prefix
-  service_vpc_id     = module.network.service_vpc_id
-  service_subnet_id  = module.network.service_subnet_id
+  name_prefix         = local.name_prefix
+  service_vpc_id      = module.network.service_vpc_id
+  service_subnet_id   = module.network.service_subnet_id
   service_instance_id = module.service_compute[0].instance_id
 
-  consumer_vpc_id     = module.network.consumer_vpc_id
-  consumer_vpc_cidr   = module.network.consumer_vpc_cidr
-  consumer_subnet_id  = module.network.consumer_subnet_id
-  tags                = local.common_tags
+  consumer_vpc_id    = module.network.consumer_vpc_id
+  consumer_vpc_cidr  = module.network.consumer_vpc_cidr
+  consumer_subnet_id = module.network.consumer_subnet_id
+  tags               = local.common_tags
 }
 
 locals {
