@@ -1,0 +1,143 @@
+name: Terraform CI
+
+on:
+  pull_request:
+    paths:
+      - "**/*.tf"
+      - "**/*.tfvars"
+      - "**/*.tftest.hcl"
+      - ".terraform.lock.hcl"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches: [main]
+    paths:
+      - "**/*.tf"
+      - "**/*.tfvars"
+      - "**/*.tftest.hcl"
+      - ".terraform.lock.hcl"
+      - ".github/workflows/terraform.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TF_VERSION: "1.10.5"
+  WORKING_DIRECTORY: live/dev
+
+jobs:
+  static-checks:
+    name: Format, validate, and mocked tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive
+
+      - name: Initialize without the remote backend
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: terraform init -backend=false -lockfile=readonly
+
+      - name: Validate configuration
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: terraform validate
+
+      - name: Run mocked Terraform tests
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: terraform test -no-color
+
+  speculative-plan:
+    name: Speculative remote-state plan
+    needs: static-checks
+    runs-on: ubuntu-latest
+
+    # Do not give an untrusted fork an AWS identity. Fork PRs still receive
+    # the credential-free static-checks job above.
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'push' ||
+          github.event.pull_request.head.repo.full_name == github.repository }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Obtain short-lived AWS credentials through GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.TF_PLAN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Build non-secret backend configuration
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        shell: bash
+        run: |
+          cat > backend.ci.hcl <<EOF
+          bucket       = "${{ vars.TF_STATE_BUCKET }}"
+          key          = "${{ vars.TF_STATE_KEY }}"
+          region       = "${{ vars.AWS_REGION }}"
+          encrypt      = true
+          use_lockfile = true
+          EOF
+
+      - name: Initialize the remote backend
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: terraform init -backend-config=backend.ci.hcl -lockfile=readonly
+
+      - name: Run speculative plan
+        id: plan
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        shell: bash
+        run: |
+          set +e
+          terraform plan \
+            -no-color \
+            -detailed-exitcode \
+            -lock-timeout=5m \
+            2>&1 | tee plan.txt
+          exit_code=${PIPESTATUS[0]}
+          set -e
+
+          case "$exit_code" in
+            0)
+              echo "result=no-changes" >> "$GITHUB_OUTPUT"
+              ;;
+            2)
+              echo "result=changes-present" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Terraform plan failed with exit code $exit_code" >&2
+              exit "$exit_code"
+              ;;
+          esac
+
+      - name: Upload human-readable plan output
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-speculative-plan-${{ github.run_id }}
+          path: ${{ env.WORKING_DIRECTORY }}/plan.txt
+          retention-days: 7
+          if-no-files-found: error

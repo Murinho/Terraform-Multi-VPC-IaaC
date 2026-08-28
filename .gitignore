@@ -1,0 +1,12 @@
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfplan
+plan.txt
+backend.hcl
+terraform.tfvars
+*.auto.tfvars
+!live/dev/dev.auto.tfvars
+.DS_Store

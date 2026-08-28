@@ -1,0 +1,9 @@
+aws_region        = "us-east-1"
+state_bucket_name = "REPLACE_WITH_STATE_BUCKET"
+state_key         = "multi-vpc-lifecycle/dev/terraform.tfstate"
+github_owner      = "REPLACE_WITH_OWNER"
+github_repository = "terraform-multivpc-lifecycle-lab"
+
+# When GitHub's OIDC provider already exists in this AWS account:
+# create_github_oidc_provider = false
+# existing_oidc_provider_arn  = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"

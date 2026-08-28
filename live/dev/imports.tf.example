@@ -1,0 +1,6 @@
+# Copy this file to imports.tf during docs/03-import.md and replace the ID.
+# The optional resource must also be enabled in terraform.tfvars.
+import {
+  to = module.network.aws_security_group.imported[0]
+  id = "sg-REPLACE_WITH_REAL_ID"
+}

@@ -1,0 +1,22 @@
+#!/bin/bash
+set -euxo pipefail
+exec > >(tee /var/log/lab-user-data.log | logger -t lab-user-data -s 2>/dev/console) 2>&1
+
+TARGET='${target_host}'
+PORT=8080
+
+for attempt in $(seq 1 60); do
+  echo "LAB_PROBE attempt=$attempt target=$TARGET:$PORT" >/dev/console
+
+  if timeout 3 bash -c "exec 3<>/dev/tcp/$TARGET/$PORT; printf 'GET / HTTP/1.0\r\nHost: lab\r\n\r\n' >&3; cat <&3" >/tmp/lab-response 2>/tmp/lab-error; then
+    echo "LAB_PROBE_SUCCESS target=$TARGET:$PORT" >/dev/console
+    cat /tmp/lab-response >/dev/console
+    exit 0
+  fi
+
+  cat /tmp/lab-error >/dev/console || true
+  sleep 5
+done
+
+echo "LAB_PROBE_FAILED target=$TARGET:$PORT" >/dev/console
+exit 1

@@ -1,0 +1,48 @@
+#!/bin/bash
+set -euxo pipefail
+exec > >(tee /var/log/lab-user-data.log | logger -t lab-user-data -s 2>/dev/console) 2>&1
+
+mkdir -p /opt/tf-lifecycle-lab
+cat >/opt/tf-lifecycle-lab/server.py <<'PYTHON'
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import json
+import socket
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        payload = json.dumps({
+            "status": "ok",
+            "server": socket.gethostname(),
+            "message": "Reached ${name} through the configured AWS path"
+        }).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def log_message(self, fmt, *args):
+        print(fmt % args, flush=True)
+
+ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+PYTHON
+
+cat >/etc/systemd/system/tf-lifecycle-app.service <<'UNIT'
+[Unit]
+Description=Terraform lifecycle lab HTTP service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/tf-lifecycle-lab/server.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+systemctl daemon-reload
+systemctl enable --now tf-lifecycle-app.service
+echo "LAB_SERVER_READY port=8080" >/dev/console
