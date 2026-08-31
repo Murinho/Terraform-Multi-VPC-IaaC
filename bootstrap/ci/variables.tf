@@ -24,6 +24,18 @@ variable "github_repository" {
   type        = string
 }
 
+variable "github_owner_id" {
+  description = "Immutable GitHub owner numeric ID. Set with github_repository_id for repositories that use immutable OIDC subject claims."
+  type        = string
+  default     = null
+}
+
+variable "github_repository_id" {
+  description = "Immutable GitHub repository numeric ID. Set with github_owner_id for repositories that use immutable OIDC subject claims."
+  type        = string
+  default     = null
+}
+
 variable "create_github_oidc_provider" {
   description = "Set false when the AWS account already has GitHub's OIDC provider."
   type        = bool
