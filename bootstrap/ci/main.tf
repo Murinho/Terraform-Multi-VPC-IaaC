@@ -9,6 +9,11 @@ resource "terraform_data" "guardrails" {
       condition     = var.create_github_oidc_provider || var.existing_oidc_provider_arn != null
       error_message = "Provide existing_oidc_provider_arn when create_github_oidc_provider is false."
     }
+
+    precondition {
+      condition     = (var.github_owner_id == null && var.github_repository_id == null) || (var.github_owner_id != null && var.github_repository_id != null)
+      error_message = "Set both github_owner_id and github_repository_id for immutable GitHub OIDC subjects, or leave both null for legacy slug subjects."
+    }
   }
 }
 
@@ -20,8 +25,10 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 locals {
-  github_oidc_provider_arn = var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : var.existing_oidc_provider_arn
-  repo_subject_prefix      = "repo:${var.github_owner}/${var.github_repository}"
+  github_oidc_provider_arn      = var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : var.existing_oidc_provider_arn
+  legacy_repo_subject_prefix    = "repo:${var.github_owner}/${var.github_repository}"
+  immutable_repo_subject_prefix = var.github_owner_id != null && var.github_repository_id != null ? "repo:${var.github_owner}@${var.github_owner_id}/${var.github_repository}@${var.github_repository_id}" : null
+  repo_subject_prefix           = local.immutable_repo_subject_prefix != null ? local.immutable_repo_subject_prefix : local.legacy_repo_subject_prefix
 }
 
 data "aws_iam_policy_document" "assume_plan_role" {
