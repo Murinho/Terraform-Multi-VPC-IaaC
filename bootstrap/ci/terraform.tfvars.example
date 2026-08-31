@@ -2,7 +2,11 @@ aws_region        = "us-east-1"
 state_bucket_name = "REPLACE_WITH_STATE_BUCKET"
 state_key         = "multi-vpc-lifecycle/dev/terraform.tfstate"
 github_owner      = "REPLACE_WITH_OWNER"
-github_repository = "terraform-multivpc-lifecycle-lab"
+github_repository = "REPLACE_WITH_REPOSITORY"
+
+# Repositories created after 2026-07-15 use immutable OIDC subject claims by default.
+# github_owner_id      = "12345678"
+# github_repository_id = "123456789"
 
 # When GitHub's OIDC provider already exists in this AWS account:
 # create_github_oidc_provider = false

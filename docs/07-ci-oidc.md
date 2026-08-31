@@ -35,10 +35,17 @@ cd bootstrap/ci
 cp backend.hcl.example backend.hcl
 cp terraform.tfvars.example terraform.tfvars
 # Fill state bucket, region, github_owner, github_repository.
+# The GitHub owner and repository must exactly match the repo slug.
 terraform init -backend-config=backend.hcl
 terraform plan -out=ci-bootstrap.tfplan
 terraform apply ci-bootstrap.tfplan
 terraform output
+```
+
+Repositories created after 2026-07-15 use immutable OIDC subject claims by default. For those repositories, also set `github_owner_id` and `github_repository_id` in `terraform.tfvars`. You can get both with:
+
+```bash
+gh api repos/OWNER/REPOSITORY --jq '{github_owner_id: .owner.id, github_repository_id: .id}'
 ```
 
 If the account already has the GitHub Actions OIDC provider, set:
@@ -53,12 +60,13 @@ existing_oidc_provider_arn  = "arn:aws:iam::ACCOUNT:oidc-provider/token.actions.
 Create these GitHub Actions repository variables:
 
 ```text
-AWS_TERRAFORM_PLAN_ROLE_ARN = output plan_role_arn
-TF_STATE_BUCKET             = the state bucket name
-TF_STATE_REGION             = us-east-1
+TF_PLAN_ROLE_ARN = output plan_role_arn
+TF_STATE_BUCKET  = the state bucket name
+TF_STATE_KEY     = multi-vpc-lifecycle/dev/terraform.tfstate
+AWS_REGION       = us-east-1
 ```
 
-The workflow uses the fixed state key:
+The default live state key is:
 
 ```text
 multi-vpc-lifecycle/dev/terraform.tfstate
