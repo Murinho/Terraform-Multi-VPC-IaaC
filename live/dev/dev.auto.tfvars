@@ -16,4 +16,4 @@ instance_type = "t3.micro"
 consumer_secondary_cidrs = []
 
 # Used later by the import drill.
-manage_imported_security_group = false
+manage_imported_security_group = true
