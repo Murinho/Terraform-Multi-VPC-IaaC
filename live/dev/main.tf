@@ -35,7 +35,7 @@ resource "terraform_data" "guardrails" {
   }
 }
 
-module "network" {
+module "core_network" {
   source = "../../modules/network"
 
   name_prefix                    = local.name_prefix
@@ -58,8 +58,8 @@ module "service_compute" {
   role               = "service"
   ami_id             = data.aws_ssm_parameter.al2023_ami[0].value
   instance_type      = var.instance_type
-  subnet_id          = module.network.service_subnet_id
-  security_group_ids = [module.network.service_security_group_id]
+  subnet_id          = module.core_network.service_subnet_id
+  security_group_ids = [module.core_network.service_security_group_id]
   tags               = local.common_tags
 }
 
@@ -68,13 +68,13 @@ module "application" {
   source = "../../modules/application"
 
   name_prefix         = local.name_prefix
-  service_vpc_id      = module.network.service_vpc_id
-  service_subnet_id   = module.network.service_subnet_id
+  service_vpc_id      = module.core_network.service_vpc_id
+  service_subnet_id   = module.core_network.service_subnet_id
   service_instance_id = module.service_compute[0].instance_id
 
-  consumer_vpc_id    = module.network.consumer_vpc_id
-  consumer_vpc_cidr  = module.network.consumer_vpc_cidr
-  consumer_subnet_id = module.network.consumer_subnet_id
+  consumer_vpc_id    = module.core_network.consumer_vpc_id
+  consumer_vpc_cidr  = module.core_network.consumer_vpc_cidr
+  consumer_subnet_id = module.core_network.consumer_subnet_id
   tags               = local.common_tags
 }
 
@@ -93,8 +93,8 @@ module "consumer_compute" {
   role               = "probe"
   ami_id             = data.aws_ssm_parameter.al2023_ami[0].value
   instance_type      = var.instance_type
-  subnet_id          = module.network.consumer_subnet_id
-  security_group_ids = [module.network.consumer_security_group_id]
+  subnet_id          = module.core_network.consumer_subnet_id
+  security_group_ids = [module.core_network.consumer_security_group_id]
   probe_target_host  = local.probe_target_host
   tags               = local.common_tags
 }

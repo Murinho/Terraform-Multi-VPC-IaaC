@@ -15,35 +15,35 @@ output "selected_availability_zone" {
 }
 
 output "consumer_vpc_id" {
-  value = module.network.consumer_vpc_id
+  value = module.core_network.consumer_vpc_id
 }
 
 output "service_vpc_id" {
-  value = module.network.service_vpc_id
+  value = module.core_network.service_vpc_id
 }
 
 output "consumer_route_table_id" {
-  value = module.network.consumer_route_table_id
+  value = module.core_network.consumer_route_table_id
 }
 
 output "service_route_table_id" {
-  value = module.network.service_route_table_id
+  value = module.core_network.service_route_table_id
 }
 
 output "consumer_security_group_id" {
-  value = module.network.consumer_security_group_id
+  value = module.core_network.consumer_security_group_id
 }
 
 output "service_security_group_id" {
-  value = module.network.service_security_group_id
+  value = module.core_network.service_security_group_id
 }
 
 output "peering_connection_id" {
-  value = module.network.peering_connection_id
+  value = module.core_network.peering_connection_id
 }
 
 output "transit_gateway_id" {
-  value = module.network.transit_gateway_id
+  value = module.core_network.transit_gateway_id
 }
 
 output "service_instance_id" {
