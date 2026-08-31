@@ -5,9 +5,9 @@ consumer_vpc_cidr = "10.10.0.0/16"
 service_vpc_cidr  = "10.20.0.0/16"
 
 # Safe baseline.
-connectivity_mode     = "peering"
-allow_paid_networking = false
-enable_compute        = false
+connectivity_mode     = "privatelink"
+allow_paid_networking = true
+enable_compute        = true
 
 # Verify account-specific eligibility before changing enable_compute to true.
 instance_type = "t3.micro"
