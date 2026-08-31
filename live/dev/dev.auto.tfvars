@@ -13,7 +13,7 @@ enable_compute        = false
 instance_type = "t3.micro"
 
 # Used later by the additive CIDR drill.
-consumer_secondary_cidrs = []
+consumer_secondary_cidrs = ["10.30.0.0/16"]
 
 # Used later by the import drill.
 manage_imported_security_group = true
